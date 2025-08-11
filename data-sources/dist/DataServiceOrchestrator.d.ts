@@ -235,5 +235,76 @@ export declare class DataServiceOrchestrator {
         };
         timestamp: Date;
     };
+    /**
+     * Set up monitoring alerts for critical system metrics
+     */
+    setupMonitoringAlerts(config: {
+        healthScoreThreshold: number;
+        responseTimeThreshold: number;
+        cacheHitRateThreshold: number;
+        successRateThreshold: number;
+        enableEmailAlerts?: boolean;
+        enableSlackAlerts?: boolean;
+    }): {
+        alerts: Array<{
+            type: string;
+            condition: string;
+            threshold: number;
+            status: "active" | "inactive";
+        }>;
+        status: "configured" | "failed";
+    };
+    /**
+     * Check current system status against configured alerts
+     */
+    checkAlertStatus(): {
+        activeAlerts: Array<{
+            type: string;
+            severity: "critical" | "warning" | "info";
+            message: string;
+            timestamp: string;
+        }>;
+        systemStatus: "healthy" | "warning" | "critical";
+        recommendations: string[];
+    };
+    /**
+     * Get system performance trends over time
+     */
+    getPerformanceTrends(timeframe?: "1h" | "24h" | "7d" | "30d"): {
+        trends: Array<{
+            metric: string;
+            values: Array<{
+                timestamp: string;
+                value: number;
+            }>;
+            trend: "increasing" | "decreasing" | "stable";
+        }>;
+        summary: {
+            overallTrend: string;
+            recommendations: string[];
+        };
+    };
+    /**
+     * Export system configuration and monitoring setup
+     */
+    exportSystemConfiguration(): {
+        orchestrator: {
+            version: string;
+            features: string[];
+            configuration: any;
+        };
+        monitoring: {
+            alerts: any;
+            thresholds: any;
+            status: string;
+        };
+        performance: {
+            metrics: any;
+            trends: any;
+            recommendations: any;
+        };
+        timestamp: string;
+    };
+    private alertConfig?;
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map
