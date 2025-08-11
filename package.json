@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "build": "tsc",
+    "build:netlify": "npm run build && npm run build:frontend && npm run build:functions",
+    "build:frontend": "mkdir -p public && cp -r src/frontend/* public/",
+    "build:functions": "mkdir -p netlify/functions && cp -r src/functions/* netlify/functions/",
+    "start": "node dist/DataServiceOrchestrator.js",
+    "dev": "ts-node src/DataServiceOrchestrator.ts",
+    "test": "jest",
+    "clean": "rm -rf dist",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  }
+}
