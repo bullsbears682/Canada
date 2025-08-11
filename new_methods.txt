@@ -1,0 +1,49 @@
+  async getComprehensiveUtilityRates(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      utilityRates: await this.dataSourceManager.getUtilityRates(location),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getMunicipalData(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      municipalData: await this.dataSourceManager.getMunicipalData(location),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getEmploymentData(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      employmentData: await this.dataSourceManager.getEmploymentData(location),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getTaxAndBenefitsAnalysis(location: CanadianLocation, householdSize: number): Promise<any> {
+    this.ensureInitialized();
+    const recommendations = this.generateTaxAndBenefitsRecommendations(location, householdSize);
+    return {
+      location,
+      householdSize,
+      recommendations,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  private generateTaxAndBenefitsRecommendations(location: CanadianLocation, householdSize: number): any[] {
+    return [
+      { type: "TAX_CREDIT", description: "Basic personal amount", amount: 15000 },
+      { type: "BENEFIT", description: "Canada Child Benefit", amount: householdSize * 6000 },
+      { type: "TAX_CREDIT", description: "GST/HST credit", amount: 500 }
+    ];
+  }

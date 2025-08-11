@@ -1,0 +1,97 @@
+  async getEmploymentData(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    
+    const cacheKey = `employment-data-${location.province}-${location.city}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    
+    const result = {
+      location,
+      employmentData: await this.dataSourceManager.fetchData("employment-service", "data", { location }),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+    
+    await this.cacheManager.set(cacheKey, result, 3600000); // Cache for 1 hour
+    return result;
+  }
+
+  async getTaxAndBenefitsAnalysis(location: CanadianLocation, householdSize: number): Promise<any> {
+    this.ensureInitialized();
+    
+    const cacheKey = `tax-benefits-${location.province}-${householdSize}`;
+    const cached = await this.cacheManager.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+    
+    const recommendations = this.generateTaxAndBenefitsRecommendations(householdSize);
+    const result = {
+      location,
+      householdSize,
+      recommendations,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+    
+    await this.cacheManager.set(cacheKey, result, 7200000); // Cache for 2 hours
+    return result;
+  }
+
+  private generateTaxAndBenefitsRecommendations(householdSize: number): any[] {
+    return [
+      { type: "TAX_CREDIT", description: "Basic personal amount", amount: 15000 },
+      { type: "BENEFIT", description: "Canada Child Benefit", amount: householdSize * 6000 },
+      { type: "TAX_CREDIT", description: "GST/HST credit", amount: 500 }
+    ];
+  }
+
+  getConfigurationStatus(): any {
+    this.ensureInitialized();
+    return {
+      dataSources: this.dataSourceManager.getDataSources(),
+      isInitialized: this.isInitialized,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  getPerformanceMetrics(): any {
+    this.ensureInitialized();
+    const metrics: any = {};
+    this.dataSourceManager.getDataSources().forEach(source => {
+      metrics[source] = this.dataSourceManager.getPerformanceMetrics(source);
+    });
+    return {
+      metrics,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  getCacheInfo(): any {
+    this.ensureInitialized();
+    const cacheStats = this.dataSourceManager.getCacheStats();
+    return {
+      cacheStats,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getCachedData<T>(key: string): Promise<T | null> {
+    this.ensureInitialized();
+    return this.cacheManager.get(key);
+  }
+
+  async setCachedData<T>(key: string, data: T, ttl?: number): Promise<void> {
+    this.ensureInitialized();
+    await this.cacheManager.set(key, data, ttl);
+  }
+
+  async clearCache(): Promise<void> {
+    this.ensureInitialized();
+    await this.cacheManager.clear();
+  }
