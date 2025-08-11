@@ -6,6 +6,7 @@ const DataValidationService_1 = require("./services/DataValidationService");
 const DataSynchronizationService_1 = require("./services/DataSynchronizationService");
 const DataMonitoringService_1 = require("./services/DataMonitoringService");
 const cacheManager_1 = require("./utils/cacheManager");
+const performanceMonitor_1 = require("./utils/performanceMonitor");
 const StatsCanDataSource_1 = require("./sources/StatsCanDataSource");
 const CMHCDataSource_1 = require("./sources/CMHCDataSource");
 const BankOfCanadaDataSource_1 = require("./sources/BankOfCanadaDataSource");
@@ -127,6 +128,7 @@ class DataServiceOrchestrator {
      */
     async getHousingData(location) {
         this.ensureInitialized();
+        const timerId = performanceMonitor_1.PerformanceMonitor.startTimer('getHousingData');
         try {
             // Try to get data from primary source (StatsCan)
             const housingData = await this.dataSourceManager.fetchData('stats-can', 'housing', { postalCode: location.postalCode });
@@ -135,6 +137,7 @@ class DataServiceOrchestrator {
             if (!validationResult.isValid) {
                 console.warn(`⚠️  Housing data validation warnings for ${location.postalCode}:`, validationResult.warnings);
             }
+            performanceMonitor_1.PerformanceMonitor.endTimer('getHousingData', timerId, true);
             return housingData;
         }
         catch (error) {
@@ -143,10 +146,12 @@ class DataServiceOrchestrator {
             try {
                 const fallbackData = await this.dataSourceManager.fetchData('cmhc', 'housing', { postalCode: location.postalCode });
                 console.log(`✅ Retrieved fallback housing data from CMHC for ${location.postalCode}`);
+                performanceMonitor_1.PerformanceMonitor.endTimer('getHousingData', timerId, true);
                 return fallbackData;
             }
             catch (fallbackError) {
                 console.error(`❌ Fallback housing data also failed for ${location.postalCode}:`, fallbackError);
+                performanceMonitor_1.PerformanceMonitor.endTimer('getHousingData', timerId, false, `Fallback failed: ${fallbackError}`);
                 throw new Error(`Unable to retrieve housing data for ${location.postalCode}`);
             }
         }
@@ -156,6 +161,7 @@ class DataServiceOrchestrator {
      */
     async getEconomicIndicators() {
         this.ensureInitialized();
+        const timerId = performanceMonitor_1.PerformanceMonitor.startTimer('getEconomicIndicators');
         try {
             // Get data from Bank of Canada (primary source for economic data)
             const economicData = await this.dataSourceManager.fetchData('bank-of-canada', 'economic', {});
@@ -164,10 +170,12 @@ class DataServiceOrchestrator {
             if (!validationResult.isValid) {
                 console.warn('⚠️  Economic data validation warnings:', validationResult.warnings);
             }
+            performanceMonitor_1.PerformanceMonitor.endTimer('getEconomicIndicators', timerId, true);
             return economicData;
         }
         catch (error) {
             console.error('❌ Failed to fetch economic indicators:', error);
+            performanceMonitor_1.PerformanceMonitor.endTimer('getEconomicIndicators', timerId, false, error instanceof Error ? error.message : String(error));
             throw new Error('Unable to retrieve economic indicators');
         }
     }
@@ -517,12 +525,55 @@ class DataServiceOrchestrator {
         };
     }
     getPerformanceMetrics() {
+        this.ensureInitialized();
         return {
-            cacheHitRate: this.cacheManager.getStats().hitRate,
-            averageResponseTime: 150,
-            totalRequests: 1000,
+            cache: this.cacheManager.getStats(),
+            orchestrator: performanceMonitor_1.PerformanceMonitor.getAllMetrics(),
+            systemHealth: performanceMonitor_1.PerformanceMonitor.getSystemHealthSummary(),
+            recommendations: performanceMonitor_1.PerformanceMonitor.getPerformanceRecommendations(),
             lastUpdated: new Date()
         };
+    }
+    /**
+     * Get detailed performance analytics and insights
+     */
+    getPerformanceAnalytics() {
+        this.ensureInitialized();
+        const allMetrics = performanceMonitor_1.PerformanceMonitor.getAllMetrics();
+        const systemHealth = performanceMonitor_1.PerformanceMonitor.getSystemHealthSummary();
+        // Calculate performance trends
+        const performanceTrends = Array.from(allMetrics.entries()).map(([operation, metrics]) => ({
+            operation,
+            successRate: metrics?.successRate || 0,
+            averageResponseTime: metrics?.averageResponseTime || 0,
+            isPerformingPoorly: performanceMonitor_1.PerformanceMonitor.isOperationPerformingPoorly(operation),
+            trend: this.calculatePerformanceTrend(operation)
+        }));
+        return {
+            trends: performanceTrends,
+            systemHealth,
+            recommendations: performanceMonitor_1.PerformanceMonitor.getPerformanceRecommendations(),
+            criticalOperations: systemHealth.criticalOperations,
+            performanceIssues: systemHealth.performanceIssues,
+            lastUpdated: new Date()
+        };
+    }
+    /**
+     * Calculate performance trend for a specific operation
+     */
+    calculatePerformanceTrend(operation) {
+        // This is a simplified trend calculation
+        // In a real implementation, you might store historical data and calculate actual trends
+        const metrics = performanceMonitor_1.PerformanceMonitor.getMetrics(operation);
+        if (!metrics)
+            return 'stable';
+        if (metrics.successRate > 95 && metrics.averageResponseTime < 100) {
+            return 'improving';
+        }
+        else if (metrics.successRate < 80 || metrics.averageResponseTime > 500) {
+            return 'declining';
+        }
+        return 'stable';
     }
     getCacheInfo() {
         return {
@@ -539,6 +590,47 @@ class DataServiceOrchestrator {
     }
     async clearCache() {
         this.cacheManager.clear();
+    }
+    /**
+     * Reset performance metrics for a specific operation or all operations
+     */
+    resetPerformanceMetrics(operation) {
+        if (operation) {
+            performanceMonitor_1.PerformanceMonitor.resetMetrics(operation);
+            console.log(`🔄 Reset performance metrics for operation: ${operation}`);
+        }
+        else {
+            performanceMonitor_1.PerformanceMonitor.resetAllMetrics();
+            console.log('🔄 Reset all performance metrics');
+        }
+    }
+    /**
+     * Export performance metrics for external analysis
+     */
+    exportPerformanceMetrics() {
+        this.ensureInitialized();
+        return {
+            orchestrator: performanceMonitor_1.PerformanceMonitor.exportMetrics(),
+            cache: this.cacheManager.getStats(),
+            systemHealth: performanceMonitor_1.PerformanceMonitor.getSystemHealthSummary(),
+            exportTimestamp: new Date().toISOString()
+        };
+    }
+    /**
+     * Get system recommendations based on current performance
+     */
+    getSystemRecommendations() {
+        this.ensureInitialized();
+        const recommendations = performanceMonitor_1.PerformanceMonitor.getPerformanceRecommendations();
+        const cacheStats = this.cacheManager.getStats();
+        // Add cache-specific recommendations
+        if (cacheStats.hitRate < 0.7) {
+            recommendations.push('Consider increasing cache TTL for frequently accessed data');
+        }
+        if (cacheStats.size > 1000) {
+            recommendations.push('Cache size is large - consider implementing cache eviction policies');
+        }
+        return recommendations;
     }
 }
 exports.DataServiceOrchestrator = DataServiceOrchestrator;

@@ -113,9 +113,29 @@ export declare class DataServiceOrchestrator {
     private generateTaxAndBenefitsRecommendations;
     getConfigurationStatus(): any;
     getPerformanceMetrics(): any;
+    /**
+     * Get detailed performance analytics and insights
+     */
+    getPerformanceAnalytics(): any;
+    /**
+     * Calculate performance trend for a specific operation
+     */
+    private calculatePerformanceTrend;
     getCacheInfo(): any;
     getCachedData<T>(key: string): Promise<T | null>;
     setCachedData<T>(key: string, data: T, ttl?: number): Promise<void>;
     clearCache(): Promise<void>;
+    /**
+     * Reset performance metrics for a specific operation or all operations
+     */
+    resetPerformanceMetrics(operation?: string): void;
+    /**
+     * Export performance metrics for external analysis
+     */
+    exportPerformanceMetrics(): Record<string, any>;
+    /**
+     * Get system recommendations based on current performance
+     */
+    getSystemRecommendations(): string[];
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map

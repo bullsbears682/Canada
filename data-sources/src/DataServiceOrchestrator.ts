@@ -3,6 +3,7 @@ import { DataValidationService } from './services/DataValidationService';
 import { DataSynchronizationService } from './services/DataSynchronizationService';
 import { DataMonitoringService } from './services/DataMonitoringService';
 import { CacheManager } from "./utils/cacheManager";
+import { PerformanceMonitor } from "./utils/performanceMonitor";
 import { StatsCanDataSource } from './sources/StatsCanDataSource';
 import { CMHCDataSource } from './sources/CMHCDataSource';
 import { BankOfCanadaDataSource } from './sources/BankOfCanadaDataSource';
@@ -163,6 +164,8 @@ export class DataServiceOrchestrator {
   async getHousingData(location: CanadianLocation): Promise<HousingData> {
     this.ensureInitialized();
 
+    const timerId = PerformanceMonitor.startTimer('getHousingData');
+
     try {
       // Try to get data from primary source (StatsCan)
       const housingData = await this.dataSourceManager.fetchData<HousingData>(
@@ -177,6 +180,7 @@ export class DataServiceOrchestrator {
         console.warn(`⚠️  Housing data validation warnings for ${location.postalCode}:`, validationResult.warnings);
       }
 
+      PerformanceMonitor.endTimer('getHousingData', timerId, true);
       return housingData;
 
     } catch (error) {
@@ -191,10 +195,12 @@ export class DataServiceOrchestrator {
         );
         
         console.log(`✅ Retrieved fallback housing data from CMHC for ${location.postalCode}`);
+        PerformanceMonitor.endTimer('getHousingData', timerId, true);
         return fallbackData;
 
       } catch (fallbackError) {
         console.error(`❌ Fallback housing data also failed for ${location.postalCode}:`, fallbackError);
+        PerformanceMonitor.endTimer('getHousingData', timerId, false, `Fallback failed: ${fallbackError}`);
         throw new Error(`Unable to retrieve housing data for ${location.postalCode}`);
       }
     }
@@ -205,6 +211,8 @@ export class DataServiceOrchestrator {
    */
   async getEconomicIndicators(): Promise<EconomicIndicators> {
     this.ensureInitialized();
+
+    const timerId = PerformanceMonitor.startTimer('getEconomicIndicators');
 
     try {
       // Get data from Bank of Canada (primary source for economic data)
@@ -220,10 +228,12 @@ export class DataServiceOrchestrator {
         console.warn('⚠️  Economic data validation warnings:', validationResult.warnings);
       }
 
+      PerformanceMonitor.endTimer('getEconomicIndicators', timerId, true);
       return economicData;
 
     } catch (error) {
       console.error('❌ Failed to fetch economic indicators:', error);
+      PerformanceMonitor.endTimer('getEconomicIndicators', timerId, false, error instanceof Error ? error.message : String(error));
       throw new Error('Unable to retrieve economic indicators');
     }
   }
@@ -666,12 +676,60 @@ export class DataServiceOrchestrator {
   }
 
   getPerformanceMetrics(): any {
+    this.ensureInitialized();
+    
     return {
-      cacheHitRate: this.cacheManager.getStats().hitRate,
-      averageResponseTime: 150,
-      totalRequests: 1000,
+      cache: this.cacheManager.getStats(),
+      orchestrator: PerformanceMonitor.getAllMetrics(),
+      systemHealth: PerformanceMonitor.getSystemHealthSummary(),
+      recommendations: PerformanceMonitor.getPerformanceRecommendations(),
       lastUpdated: new Date()
     };
+  }
+
+  /**
+   * Get detailed performance analytics and insights
+   */
+  getPerformanceAnalytics(): any {
+    this.ensureInitialized();
+    
+    const allMetrics = PerformanceMonitor.getAllMetrics();
+    const systemHealth = PerformanceMonitor.getSystemHealthSummary();
+    
+    // Calculate performance trends
+    const performanceTrends = Array.from(allMetrics.entries()).map(([operation, metrics]) => ({
+      operation,
+      successRate: metrics?.successRate || 0,
+      averageResponseTime: metrics?.averageResponseTime || 0,
+      isPerformingPoorly: PerformanceMonitor.isOperationPerformingPoorly(operation),
+      trend: this.calculatePerformanceTrend(operation)
+    }));
+    
+    return {
+      trends: performanceTrends,
+      systemHealth,
+      recommendations: PerformanceMonitor.getPerformanceRecommendations(),
+      criticalOperations: systemHealth.criticalOperations,
+      performanceIssues: systemHealth.performanceIssues,
+      lastUpdated: new Date()
+    };
+  }
+
+  /**
+   * Calculate performance trend for a specific operation
+   */
+  private calculatePerformanceTrend(operation: string): 'improving' | 'stable' | 'declining' {
+    // This is a simplified trend calculation
+    // In a real implementation, you might store historical data and calculate actual trends
+    const metrics = PerformanceMonitor.getMetrics(operation);
+    if (!metrics) return 'stable';
+    
+    if (metrics.successRate > 95 && metrics.averageResponseTime < 100) {
+      return 'improving';
+    } else if (metrics.successRate < 80 || metrics.averageResponseTime > 500) {
+      return 'declining';
+    }
+    return 'stable';
   }
 
   getCacheInfo(): any {
@@ -692,5 +750,53 @@ export class DataServiceOrchestrator {
 
   async clearCache(): Promise<void> {
     this.cacheManager.clear();
+  }
+
+  /**
+   * Reset performance metrics for a specific operation or all operations
+   */
+  resetPerformanceMetrics(operation?: string): void {
+    if (operation) {
+      PerformanceMonitor.resetMetrics(operation);
+      console.log(`🔄 Reset performance metrics for operation: ${operation}`);
+    } else {
+      PerformanceMonitor.resetAllMetrics();
+      console.log('🔄 Reset all performance metrics');
+    }
+  }
+
+  /**
+   * Export performance metrics for external analysis
+   */
+  exportPerformanceMetrics(): Record<string, any> {
+    this.ensureInitialized();
+    
+    return {
+      orchestrator: PerformanceMonitor.exportMetrics(),
+      cache: this.cacheManager.getStats(),
+      systemHealth: PerformanceMonitor.getSystemHealthSummary(),
+      exportTimestamp: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Get system recommendations based on current performance
+   */
+  getSystemRecommendations(): string[] {
+    this.ensureInitialized();
+    
+    const recommendations = PerformanceMonitor.getPerformanceRecommendations();
+    const cacheStats = this.cacheManager.getStats();
+    
+    // Add cache-specific recommendations
+    if (cacheStats.hitRate < 0.7) {
+      recommendations.push('Consider increasing cache TTL for frequently accessed data');
+    }
+    
+    if (cacheStats.size > 1000) {
+      recommendations.push('Cache size is large - consider implementing cache eviction policies');
+    }
+    
+    return recommendations;
   }
 }
