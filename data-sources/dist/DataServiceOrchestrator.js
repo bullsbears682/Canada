@@ -632,6 +632,350 @@ class DataServiceOrchestrator {
         }
         return recommendations;
     }
+    /**
+     * Perform batch data retrieval with performance tracking
+     */
+    async batchDataRetrieval(operations) {
+        this.ensureInitialized();
+        const batchTimerId = performanceMonitor_1.PerformanceMonitor.startTimer('batchDataRetrieval');
+        const results = [];
+        const startTime = Date.now();
+        for (const operation of operations) {
+            const operationTimerId = performanceMonitor_1.PerformanceMonitor.startTimer(`batch_${operation.type}`);
+            const operationStartTime = Date.now();
+            try {
+                let data;
+                switch (operation.type) {
+                    case 'housing':
+                        if (!operation.location)
+                            throw new Error('Location required for housing data');
+                        data = await this.getHousingData(operation.location);
+                        break;
+                    case 'economic':
+                        data = await this.getEconomicIndicators();
+                        break;
+                    case 'utility':
+                        if (!operation.location)
+                            throw new Error('Location required for utility data');
+                        data = await this.getUtilityRates(operation.location);
+                        break;
+                    case 'tax':
+                        if (!operation.location)
+                            throw new Error('Location required for tax data');
+                        data = await this.getTaxInformation(operation.location);
+                        break;
+                    case 'benefits':
+                        if (!operation.province)
+                            throw new Error('Province required for benefits data');
+                        data = await this.getGovernmentBenefits(operation.province);
+                        break;
+                    default:
+                        throw new Error(`Unknown operation type: ${operation.type}`);
+                }
+                const responseTime = Date.now() - operationStartTime;
+                performanceMonitor_1.PerformanceMonitor.endTimer(`batch_${operation.type}`, operationTimerId, true);
+                results.push({
+                    type: operation.type,
+                    data,
+                    success: true,
+                    responseTime
+                });
+            }
+            catch (error) {
+                const responseTime = Date.now() - operationStartTime;
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                performanceMonitor_1.PerformanceMonitor.endTimer(`batch_${operation.type}`, operationTimerId, false, errorMessage);
+                results.push({
+                    type: operation.type,
+                    data: null,
+                    success: false,
+                    error: errorMessage,
+                    responseTime
+                });
+            }
+        }
+        const totalTime = Date.now() - startTime;
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+        const averageTime = results.length > 0 ? results.reduce((sum, r) => sum + r.responseTime, 0) / results.length : 0;
+        performanceMonitor_1.PerformanceMonitor.endTimer('batchDataRetrieval', batchTimerId, failed === 0);
+        return {
+            results,
+            summary: {
+                total: results.length,
+                successful,
+                failed,
+                totalTime,
+                averageTime
+            }
+        };
+    }
+    /**
+     * Benchmark system performance with synthetic load
+     */
+    async runPerformanceBenchmark(iterations = 10) {
+        this.ensureInitialized();
+        console.log(`🚀 Starting performance benchmark with ${iterations} iterations...`);
+        const benchmarkTimerId = performanceMonitor_1.PerformanceMonitor.startTimer('performanceBenchmark');
+        const benchmarkStartTime = Date.now();
+        const results = [];
+        // Create a test location for benchmarking
+        const testLocation = {
+            city: 'Toronto',
+            province: 'ON',
+            postalCode: 'M5V 3A8',
+            latitude: 43.6532,
+            longitude: -79.3832
+        };
+        for (let i = 0; i < iterations; i++) {
+            const iterationTimerId = performanceMonitor_1.PerformanceMonitor.startTimer(`benchmark_iteration_${i}`);
+            const iterationStartTime = Date.now();
+            try {
+                // Run a combination of operations to simulate real usage
+                await Promise.all([
+                    this.getHousingData(testLocation),
+                    this.getEconomicIndicators(),
+                    this.getUtilityRates(testLocation)
+                ]);
+                const responseTime = Date.now() - iterationStartTime;
+                performanceMonitor_1.PerformanceMonitor.endTimer(`benchmark_iteration_${i}`, iterationTimerId, true);
+                results.push({
+                    iteration: i + 1,
+                    responseTime,
+                    success: true
+                });
+                console.log(`  ✅ Iteration ${i + 1}/${iterations} completed in ${responseTime}ms`);
+            }
+            catch (error) {
+                const responseTime = Date.now() - iterationStartTime;
+                performanceMonitor_1.PerformanceMonitor.endTimer(`benchmark_iteration_${i}`, iterationTimerId, false, 'Benchmark iteration failed');
+                results.push({
+                    iteration: i + 1,
+                    responseTime,
+                    success: false
+                });
+                console.log(`  ❌ Iteration ${i + 1}/${iterations} failed in ${responseTime}ms`);
+            }
+            // Small delay between iterations to avoid overwhelming the system
+            if (i < iterations - 1) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+        const totalTime = Date.now() - benchmarkStartTime;
+        const successful = results.filter(r => r.success).length;
+        const averageTime = results.length > 0 ? results.reduce((sum, r) => sum + r.responseTime, 0) / results.length : 0;
+        const successRate = (successful / results.length) * 100;
+        performanceMonitor_1.PerformanceMonitor.endTimer('performanceBenchmark', benchmarkTimerId, successRate > 90);
+        // Generate benchmark-specific recommendations
+        const recommendations = [];
+        if (successRate < 95) {
+            recommendations.push('Benchmark success rate below 95%. Review system stability and error handling.');
+        }
+        if (averageTime > 1000) {
+            recommendations.push('Average response time above 1 second. Consider performance optimizations.');
+        }
+        if (Math.max(...results.map(r => r.responseTime)) > 5000) {
+            recommendations.push('Some iterations took longer than 5 seconds. Investigate performance spikes.');
+        }
+        console.log(`🎯 Benchmark completed in ${totalTime}ms with ${successRate.toFixed(1)}% success rate`);
+        return {
+            benchmarkResults: results,
+            summary: {
+                totalTime,
+                averageTime,
+                successRate,
+                recommendations
+            }
+        };
+    }
+    /**
+     * Get comprehensive system diagnostics
+     */
+    getSystemDiagnostics() {
+        this.ensureInitialized();
+        return {
+            performance: this.getPerformanceAnalytics(),
+            cache: this.getCacheInfo(),
+            health: {
+                systemHealth: performanceMonitor_1.PerformanceMonitor.getSystemHealthSummary(),
+                dataSources: this.getAllSourcesHealth(),
+                syncStatus: this.getSyncStatus(),
+                dataQuality: this.getDataQuality()
+            },
+            recommendations: this.getSystemRecommendations(),
+            timestamp: new Date()
+        };
+    }
+    /**
+     * Get predictive analytics and capacity planning insights
+     */
+    getPredictiveAnalytics() {
+        this.ensureInitialized();
+        const allMetrics = performanceMonitor_1.PerformanceMonitor.getAllMetrics();
+        const cacheStats = this.cacheManager.getStats();
+        // Analyze trends based on current metrics
+        const trends = [];
+        // Cache hit rate trend
+        if (cacheStats.hitRate > 0.8) {
+            trends.push({ metric: 'Cache Hit Rate', trend: 'increasing', confidence: 0.85 });
+        }
+        else if (cacheStats.hitRate < 0.5) {
+            trends.push({ metric: 'Cache Hit Rate', trend: 'decreasing', confidence: 0.75 });
+        }
+        else {
+            trends.push({ metric: 'Cache Hit Rate', trend: 'stable', confidence: 0.6 });
+        }
+        // Response time trend
+        const avgResponseTimes = Array.from(allMetrics.values())
+            .filter(metric => metric && metric.averageResponseTime > 0)
+            .map(metric => metric.averageResponseTime);
+        if (avgResponseTimes.length > 0) {
+            const avgResponseTime = avgResponseTimes.reduce((sum, time) => sum + time, 0) / avgResponseTimes.length;
+            if (avgResponseTime < 500) {
+                trends.push({ metric: 'Average Response Time', trend: 'decreasing', confidence: 0.8 });
+            }
+            else if (avgResponseTime > 2000) {
+                trends.push({ metric: 'Average Response Time', trend: 'increasing', confidence: 0.7 });
+            }
+            else {
+                trends.push({ metric: 'Average Response Time', trend: 'stable', confidence: 0.65 });
+            }
+        }
+        // Capacity planning insights
+        const capacityPlanning = [];
+        // Cache capacity
+        const currentCacheSize = cacheStats.size || 0;
+        const projectedCacheSize = currentCacheSize * 1.2; // 20% growth projection
+        capacityPlanning.push({
+            resource: 'Cache Storage',
+            current: currentCacheSize,
+            projected: Math.round(projectedCacheSize),
+            recommendation: projectedCacheSize > 1000 ? 'Consider implementing cache eviction policies' : 'Current capacity is sufficient'
+        });
+        // Performance capacity
+        const totalOperations = Array.from(allMetrics.values())
+            .reduce((sum, metric) => sum + (metric?.totalRequests || 0), 0);
+        const projectedOperations = totalOperations * 1.15; // 15% growth projection
+        capacityPlanning.push({
+            resource: 'Request Throughput',
+            current: totalOperations,
+            projected: Math.round(projectedOperations),
+            recommendation: projectedOperations > 10000 ? 'Monitor system performance under increased load' : 'System can handle projected growth'
+        });
+        // Risk assessment
+        const riskAssessment = [];
+        // Cache performance risk
+        if (cacheStats.hitRate < 0.6) {
+            riskAssessment.push({
+                risk: 'Low Cache Performance',
+                probability: 'medium',
+                impact: 'Increased response times and API calls',
+                mitigation: 'Optimize cache TTL and implement better cache keys'
+            });
+        }
+        // System stability risk
+        const criticalOperations = Array.from(allMetrics.entries())
+            .filter(([_, metric]) => metric && metric.successRate < 0.8)
+            .map(([operation, _]) => operation);
+        if (criticalOperations.length > 0) {
+            riskAssessment.push({
+                risk: 'Critical Operations Failing',
+                probability: 'high',
+                impact: 'Service degradation and user experience issues',
+                mitigation: 'Immediate review of failing operations and error handling'
+            });
+        }
+        // Performance degradation risk
+        const slowOperations = Array.from(allMetrics.values())
+            .filter(metric => metric && metric.averageResponseTime > 3000);
+        if (slowOperations.length > 0) {
+            riskAssessment.push({
+                risk: 'Performance Degradation',
+                probability: 'medium',
+                impact: 'User dissatisfaction and potential service unavailability',
+                mitigation: 'Implement performance optimizations and consider scaling'
+            });
+        }
+        return {
+            trends,
+            capacityPlanning,
+            riskAssessment,
+            timestamp: new Date()
+        };
+    }
+    /**
+     * Generate a comprehensive system report
+     */
+    generateSystemReport() {
+        this.ensureInitialized();
+        const performance = this.getPerformanceAnalytics();
+        const diagnostics = this.getSystemDiagnostics();
+        const predictive = this.getPredictiveAnalytics();
+        // Determine overall system status
+        let status = 'healthy';
+        let summary = 'System is operating normally with good performance metrics.';
+        if (diagnostics.health.systemHealth.overallSuccessRate < 90) {
+            status = 'warning';
+            summary = 'System shows some performance issues that require attention.';
+        }
+        if (diagnostics.health.systemHealth.overallSuccessRate < 80 ||
+            diagnostics.health.systemHealth.averageResponseTime > 5000) {
+            status = 'critical';
+            summary = 'System experiencing critical performance issues requiring immediate attention.';
+        }
+        // Key metrics for executive summary
+        const keyMetrics = [
+            {
+                name: 'Overall Success Rate',
+                value: `${diagnostics.health.systemHealth.overallSuccessRate.toFixed(1)}%`,
+                trend: diagnostics.health.systemHealth.overallSuccessRate > 95 ? '↗️ Improving' : '↘️ Declining'
+            },
+            {
+                name: 'Average Response Time',
+                value: `${diagnostics.health.systemHealth.averageResponseTime.toFixed(0)}ms`,
+                trend: diagnostics.health.systemHealth.averageResponseTime < 1000 ? '↗️ Good' : '↘️ Needs Attention'
+            },
+            {
+                name: 'Cache Hit Rate',
+                value: `${(diagnostics.cache.stats.hitRate * 100).toFixed(1)}%`,
+                trend: diagnostics.cache.stats.hitRate > 0.8 ? '↗️ Excellent' : '↘️ Needs Optimization'
+            }
+        ];
+        // Categorize recommendations by timeline
+        const allRecommendations = this.getSystemRecommendations();
+        const immediate = [];
+        const shortTerm = [];
+        const longTerm = [];
+        allRecommendations.forEach(rec => {
+            if (rec.includes('critical') || rec.includes('immediate') || rec.includes('failing')) {
+                immediate.push(rec);
+            }
+            else if (rec.includes('performance') || rec.includes('optimization')) {
+                shortTerm.push(rec);
+            }
+            else {
+                longTerm.push(rec);
+            }
+        });
+        return {
+            executive: {
+                summary,
+                status,
+                keyMetrics
+            },
+            technical: {
+                performance,
+                diagnostics,
+                predictive
+            },
+            recommendations: {
+                immediate,
+                shortTerm,
+                longTerm
+            },
+            timestamp: new Date()
+        };
+    }
 }
 exports.DataServiceOrchestrator = DataServiceOrchestrator;
 //# sourceMappingURL=DataServiceOrchestrator.js.map

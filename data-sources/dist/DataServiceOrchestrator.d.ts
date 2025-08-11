@@ -137,5 +137,103 @@ export declare class DataServiceOrchestrator {
      * Get system recommendations based on current performance
      */
     getSystemRecommendations(): string[];
+    /**
+     * Perform batch data retrieval with performance tracking
+     */
+    batchDataRetrieval(operations: Array<{
+        type: 'housing' | 'economic' | 'utility' | 'tax' | 'benefits';
+        location?: CanadianLocation;
+        province?: Province;
+        householdSize?: number;
+    }>): Promise<{
+        results: Array<{
+            type: string;
+            data: any;
+            success: boolean;
+            error?: string;
+            responseTime: number;
+        }>;
+        summary: {
+            total: number;
+            successful: number;
+            failed: number;
+            totalTime: number;
+            averageTime: number;
+        };
+    }>;
+    /**
+     * Benchmark system performance with synthetic load
+     */
+    runPerformanceBenchmark(iterations?: number): Promise<{
+        benchmarkResults: Array<{
+            iteration: number;
+            responseTime: number;
+            success: boolean;
+        }>;
+        summary: {
+            totalTime: number;
+            averageTime: number;
+            successRate: number;
+            recommendations: string[];
+        };
+    }>;
+    /**
+     * Get comprehensive system diagnostics
+     */
+    getSystemDiagnostics(): {
+        performance: any;
+        cache: any;
+        health: any;
+        recommendations: string[];
+        timestamp: Date;
+    };
+    /**
+     * Get predictive analytics and capacity planning insights
+     */
+    getPredictiveAnalytics(): {
+        trends: Array<{
+            metric: string;
+            trend: 'increasing' | 'decreasing' | 'stable';
+            confidence: number;
+        }>;
+        capacityPlanning: Array<{
+            resource: string;
+            current: number;
+            projected: number;
+            recommendation: string;
+        }>;
+        riskAssessment: Array<{
+            risk: string;
+            probability: 'low' | 'medium' | 'high';
+            impact: string;
+            mitigation: string;
+        }>;
+        timestamp: Date;
+    };
+    /**
+     * Generate a comprehensive system report
+     */
+    generateSystemReport(): {
+        executive: {
+            summary: string;
+            status: 'healthy' | 'warning' | 'critical';
+            keyMetrics: Array<{
+                name: string;
+                value: string;
+                trend: string;
+            }>;
+        };
+        technical: {
+            performance: any;
+            diagnostics: any;
+            predictive: any;
+        };
+        recommendations: {
+            immediate: string[];
+            shortTerm: string[];
+            longTerm: string[];
+        };
+        timestamp: Date;
+    };
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map
