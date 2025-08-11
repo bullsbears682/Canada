@@ -13,6 +13,7 @@ export { CRADatasource } from './sources/CRADatasource';
 export { ESDCDataSource } from './sources/ESDCDataSource';
 export { getDataSourceConfig, getAllDataSourceNames, getHighPriorityDataSources, getDataSourcesByFrequency, validateDataSourceConfig, getEnvironmentConfig } from './config/dataSourceConfig';
 export * from './types';
+export * from './utils';
 export declare const VERSION = "1.0.0";
 export declare const BUILD_DATE: string;
 export default DataServiceOrchestrator;

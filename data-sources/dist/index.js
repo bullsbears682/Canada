@@ -55,6 +55,8 @@ Object.defineProperty(exports, "validateDataSourceConfig", { enumerable: true, g
 Object.defineProperty(exports, "getEnvironmentConfig", { enumerable: true, get: function () { return dataSourceConfig_1.getEnvironmentConfig; } });
 // Types and interfaces
 __exportStar(require("./types"), exports);
+// Utilities
+__exportStar(require("./utils"), exports);
 // Version information
 exports.VERSION = '1.0.0';
 exports.BUILD_DATE = new Date().toISOString();

@@ -17,6 +17,7 @@ import {
   CanadianLocation,
   Province
 } from './types';
+import { ConfigValidator, PerformanceMonitor, CacheManager } from "./utils";
 
 /**
  * 🇨🇦 Data Service Orchestrator
@@ -30,24 +31,22 @@ export class DataServiceOrchestrator {
   private validationService: DataValidationService;
   private syncService: DataSynchronizationService;
   private monitoringService: DataMonitoringService;
-  private isInitialized: boolean = false;
   private cacheManager: CacheManager;
+  private isInitialized: boolean = false;
 
   constructor() {
     this.dataSourceManager = new DataSourceManager();
     this.validationService = new DataValidationService();
     this.syncService = new DataSynchronizationService(this.dataSourceManager);
     this.monitoringService = new DataMonitoringService(
-    this.cacheManager = new CacheManager();
       this.dataSourceManager,
-    this.cacheManager = new CacheManager();
       this.syncService
     this.cacheManager = new CacheManager();
     );
-    this.cacheManager = new CacheManager();
   }
 
   /**
+   * Initialize the data service orchestrator
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {

@@ -105,5 +105,6 @@ export declare class DataServiceOrchestrator {
      * Calculate salary requirements based on cost of living and lifestyle
      */
     private calculateSalaryRequirements;
+    private generateTaxAndBenefitsRecommendations;
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map
