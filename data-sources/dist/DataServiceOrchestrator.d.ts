@@ -111,5 +111,11 @@ export declare class DataServiceOrchestrator {
     getEmploymentData(location: CanadianLocation): Promise<any>;
     getTaxAndBenefitsAnalysis(location: CanadianLocation, householdSize: number): Promise<any>;
     private generateTaxAndBenefitsRecommendations;
+    getConfigurationStatus(): any;
+    getPerformanceMetrics(): any;
+    getCacheInfo(): any;
+    getCachedData<T>(key: string): Promise<T | null>;
+    setCachedData<T>(key: string, data: T, ttl?: number): Promise<void>;
+    clearCache(): Promise<void>;
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map

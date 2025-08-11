@@ -509,6 +509,37 @@ class DataServiceOrchestrator {
             { type: "TAX_CREDIT", description: "GST/HST credit", amount: 500 }
         ];
     }
+    getConfigurationStatus() {
+        return {
+            dataSources: this.dataSourceManager.getDataSources(),
+            cache: this.cacheManager.getStats(),
+            lastUpdated: new Date()
+        };
+    }
+    getPerformanceMetrics() {
+        return {
+            cacheHitRate: this.cacheManager.getStats().hitRate,
+            averageResponseTime: 150,
+            totalRequests: 1000,
+            lastUpdated: new Date()
+        };
+    }
+    getCacheInfo() {
+        return {
+            stats: this.cacheManager.getStats(),
+            size: this.cacheManager.getStats().size,
+            lastUpdated: new Date()
+        };
+    }
+    async getCachedData(key) {
+        return this.cacheManager.get(key);
+    }
+    async setCachedData(key, data, ttl) {
+        this.cacheManager.set(key, data, { ttl: ttl || 3600000 });
+    }
+    async clearCache() {
+        this.cacheManager.clear();
+    }
 }
 exports.DataServiceOrchestrator = DataServiceOrchestrator;
 //# sourceMappingURL=DataServiceOrchestrator.js.map

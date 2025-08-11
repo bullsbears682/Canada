@@ -212,7 +212,7 @@ class ComprehensiveDataAnalysis {
         console.log(`👨‍👩‍👧‍👦 Household Size: ${householdSize}`);
         console.log('='.repeat(60));
         try {
-            const taxAnalysis = await this.orchestrator.getTaxAndBenefitsAnalysis(location, income, householdSize);
+            const taxAnalysis = await this.orchestrator.getTaxAndBenefitsAnalysis(location, householdSize);
             console.log('📊 Tax & Benefits Analysis:');
             console.log(`  💸 Monthly Tax Burden: $${taxAnalysis.taxBurden.toLocaleString()}`);
             console.log(`  🎁 Available Benefits: ${taxAnalysis.availableBenefits.length} programs`);

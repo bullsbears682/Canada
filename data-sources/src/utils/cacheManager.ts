@@ -247,8 +247,10 @@ export class CacheManager {
     // Remove oldest 10% of entries
     const toRemove = Math.ceil(entries.length * 0.1);
     
-    for (let i = 0; i < toRemove; i++) {
-      this.cache.delete(entries[i][0] as string);
+    for (let i = 0; i < toRemove && i < entries.length; i++) {
+      if (entries[i]) {
+        this.cache.delete(entries[i]?.[0] as string);
+      }
     }
   }
 

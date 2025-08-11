@@ -17,13 +17,13 @@ export class ErrorHandler {
    * Standardize error objects
    */
   static standardizeError(error: unknown, context?: string): {
-    type: string;
+    type: typeof ErrorHandler.ERROR_TYPES[keyof typeof ErrorHandler.ERROR_TYPES];
     message: string;
-    context?: string;
+    context: string | undefined;
     timestamp: Date;
     originalError?: unknown;
   } {
-    const errorObj = {
+    const errorObj: { type: typeof ErrorHandler.ERROR_TYPES[keyof typeof ErrorHandler.ERROR_TYPES]; message: string; context: string | undefined; timestamp: Date; originalError?: unknown; } = {
       type: this.ERROR_TYPES.UNKNOWN,
       message: 'An unknown error occurred',
       context,

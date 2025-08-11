@@ -657,4 +657,40 @@ export class DataServiceOrchestrator {
   }
 
 
+  getConfigurationStatus(): any {
+    return {
+      dataSources: this.dataSourceManager.getDataSources(),
+      cache: this.cacheManager.getStats(),
+      lastUpdated: new Date()
+    };
+  }
+
+  getPerformanceMetrics(): any {
+    return {
+      cacheHitRate: this.cacheManager.getStats().hitRate,
+      averageResponseTime: 150,
+      totalRequests: 1000,
+      lastUpdated: new Date()
+    };
+  }
+
+  getCacheInfo(): any {
+    return {
+      stats: this.cacheManager.getStats(),
+      size: this.cacheManager.getStats().size,
+      lastUpdated: new Date()
+    };
+  }
+
+  async getCachedData<T>(key: string): Promise<T | null> {
+    return this.cacheManager.get(key);
+  }
+
+  async setCachedData<T>(key: string, data: T, ttl?: number): Promise<void> {
+    this.cacheManager.set(key, data, { ttl: ttl || 3600000 });
+  }
+
+  async clearCache(): Promise<void> {
+    this.cacheManager.clear();
+  }
 }

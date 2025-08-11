@@ -148,8 +148,10 @@ export class CacheManager {
     entries.sort((a, b) => (a[1] as CacheEntry).lastAccessed - (b[1] as CacheEntry).lastAccessed); // Cast to CacheEntry
 
     const toRemove = Math.floor(this.cache.size * 0.1); // Remove 10% oldest
-    for (let i = 0; i < toRemove; i++) {
-      this.cache.delete(entries[i][0] as string); // Cast to string
+    for (let i = 0; i < toRemove && i < entries.length; i++) {
+      if (entries[i]) {
+        this.cache.delete(entries[i][0] as string); // Cast to string
+      }
     }
   }
 

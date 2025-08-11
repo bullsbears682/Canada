@@ -102,7 +102,7 @@ export class ConfigValidator {
       errors.push(`Base URL not configured for ${sourceName}`);
     }
 
-    if (config.rateLimit && config.rateLimit["requestsPerMinute"] <= 0) {
+    if (config.rateLimit && config.rateLimit.requests <= 0) {
       errors.push(`Invalid rate limit configuration for ${sourceName}`);
     }
 

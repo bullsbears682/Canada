@@ -251,7 +251,7 @@ export class ComprehensiveDataAnalysis {
     console.log('=' .repeat(60));
 
     try {
-      const taxAnalysis = await this.orchestrator.getTaxAndBenefitsAnalysis(location, income, householdSize);
+      const taxAnalysis = await this.orchestrator.getTaxAndBenefitsAnalysis(location, householdSize);
       
       console.log('📊 Tax & Benefits Analysis:');
       console.log(`  💸 Monthly Tax Burden: $${taxAnalysis.taxBurden.toLocaleString()}`);
