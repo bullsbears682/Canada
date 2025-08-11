@@ -5,6 +5,7 @@ const DataSourceManager_1 = require("./core/DataSourceManager");
 const DataValidationService_1 = require("./services/DataValidationService");
 const DataSynchronizationService_1 = require("./services/DataSynchronizationService");
 const DataMonitoringService_1 = require("./services/DataMonitoringService");
+const cacheManager_1 = require("./utils/cacheManager");
 const StatsCanDataSource_1 = require("./sources/StatsCanDataSource");
 const CMHCDataSource_1 = require("./sources/CMHCDataSource");
 const BankOfCanadaDataSource_1 = require("./sources/BankOfCanadaDataSource");
@@ -23,6 +24,7 @@ class DataServiceOrchestrator {
         this.validationService = new DataValidationService_1.DataValidationService();
         this.syncService = new DataSynchronizationService_1.DataSynchronizationService(this.dataSourceManager);
         this.monitoringService = new DataMonitoringService_1.DataMonitoringService(this.dataSourceManager, this.syncService);
+        this.cacheManager = new cacheManager_1.CacheManager();
     }
     /**
      * Initialize the data service orchestrator
@@ -461,80 +463,50 @@ class DataServiceOrchestrator {
             lastUpdated: new Date(),
             source: 'DataServiceOrchestrator'
         };
-        async;
-        getComprehensiveUtilityRates(location, types_1.CanadianLocation);
-        Promise < any > {
-            this: .ensureInitialized(),
-            return: {
-                electricity: {
-                    residential: 0.12,
-                    commercial: 0.10,
-                    industrial: 0.08
-                },
-                water: {
-                    residential: 2.50,
-                    commercial: 2.00
-                },
-                gas: {
-                    residential: 0.25,
-                    commercial: 0.22
-                },
-                internet: {
-                    basic: 60,
-                    standard: 80,
-                    premium: 120
-                }
-            }
-        };
-        async;
-        getMunicipalData(location, types_1.CanadianLocation);
-        Promise < any > {
-            this: .ensureInitialized(),
-            return: {
-                city: location.city,
-                province: location.province,
-                population: 500000,
-                area: 630,
-                timezone: "EST",
-                website: `https://www.${location.city.toLowerCase()}.ca`
-            }
-        };
-        async;
-        getEmploymentData(location, types_1.CanadianLocation);
-        Promise < any > {
-            this: .ensureInitialized(),
-            return: {
-                unemploymentRate: 5.2,
-                employmentRate: 65.8,
-                majorIndustries: ["Technology", "Finance", "Healthcare"],
-                averageSalary: 75000,
-                jobGrowthRate: 2.1
-            }
-        };
-        async;
-        getTaxAndBenefitsAnalysis(location, types_1.CanadianLocation, householdSize, number);
-        Promise < any > {
-            this: .ensureInitialized(),
-            const: recommendations = this.generateTaxAndBenefitsRecommendations(location, householdSize),
-            return: {
-                taxRates: {
-                    federal: 15,
-                    provincial: 10.5,
-                    municipal: 2.5
-                },
-                benefits: [
-                    { name: "Canada Child Benefit", amount: 6000 },
-                    { name: "GST/HST Credit", amount: 400 }
-                ],
-                recommendations
-            }
+    }
+    async getComprehensiveUtilityRates(location) {
+        this.ensureInitialized();
+        return {
+            location,
+            utilityRates: await this.dataSourceManager.fetchData("utility-service", "rates", { location }),
+            lastUpdated: new Date(),
+            source: "DataServiceOrchestrator"
         };
     }
-    generateTaxAndBenefitsRecommendations(location, householdSize) {
+    async getMunicipalData(location) {
+        this.ensureInitialized();
+        return {
+            location,
+            municipalData: await this.dataSourceManager.fetchData("municipal-service", "data", { location }),
+            lastUpdated: new Date(),
+            source: "DataServiceOrchestrator"
+        };
+    }
+    async getEmploymentData(location) {
+        this.ensureInitialized();
+        return {
+            location,
+            employmentData: await this.dataSourceManager.fetchData("employment-service", "data", { location }),
+            lastUpdated: new Date(),
+            source: "DataServiceOrchestrator"
+        };
+    }
+    async getTaxAndBenefitsAnalysis(location, householdSize) {
+        this.ensureInitialized();
+        const recommendations = this.generateTaxAndBenefitsRecommendations(householdSize);
+        return {
+            location,
+            householdSize,
+            recommendations,
+            lastUpdated: new Date(),
+            source: "DataServiceOrchestrator"
+        };
+    }
+    generateTaxAndBenefitsRecommendations(householdSize) {
         return [
-            { type: "Tax Planning", description: "Consider RRSP contributions to reduce taxable income" },
-            { type: "Benefits", description: "Apply for provincial health benefits if eligible" },
-            { type: "Credits", description: "Claim medical expenses and charitable donations" }
+            { type: "TAX_CREDIT", description: "Basic personal amount", amount: 15000 },
+            { type: "BENEFIT", description: "Canada Child Benefit", amount: householdSize * 6000 },
+            { type: "TAX_CREDIT", description: "GST/HST credit", amount: 500 }
         ];
     }
 }

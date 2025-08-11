@@ -2,6 +2,7 @@ import { DataSourceManager } from './core/DataSourceManager';
 import { DataValidationService } from './services/DataValidationService';
 import { DataSynchronizationService } from './services/DataSynchronizationService';
 import { DataMonitoringService } from './services/DataMonitoringService';
+import { CacheManager } from "./utils/cacheManager";
 import { StatsCanDataSource } from './sources/StatsCanDataSource';
 import { CMHCDataSource } from './sources/CMHCDataSource';
 import { BankOfCanadaDataSource } from './sources/BankOfCanadaDataSource';
@@ -30,24 +31,22 @@ export class DataServiceOrchestrator {
   private validationService: DataValidationService;
   private syncService: DataSynchronizationService;
   private monitoringService: DataMonitoringService;
-  private isInitialized: boolean = false;
   private cacheManager: CacheManager;
+  private isInitialized: boolean = false;
 
   constructor() {
     this.dataSourceManager = new DataSourceManager();
     this.validationService = new DataValidationService();
     this.syncService = new DataSynchronizationService(this.dataSourceManager);
     this.monitoringService = new DataMonitoringService(
-    this.cacheManager = new CacheManager();
       this.dataSourceManager,
-    this.cacheManager = new CacheManager();
       this.syncService
-    this.cacheManager = new CacheManager();
     );
     this.cacheManager = new CacheManager();
   }
 
   /**
+   * Initialize the data service orchestrator
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
@@ -607,4 +606,55 @@ export class DataServiceOrchestrator {
       source: 'DataServiceOrchestrator'
     };
   }
+  async getComprehensiveUtilityRates(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      utilityRates: await this.dataSourceManager.fetchData("utility-service", "rates", { location }),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getMunicipalData(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      municipalData: await this.dataSourceManager.fetchData("municipal-service", "data", { location }),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getEmploymentData(location: CanadianLocation): Promise<any> {
+    this.ensureInitialized();
+    return {
+      location,
+      employmentData: await this.dataSourceManager.fetchData("employment-service", "data", { location }),
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  async getTaxAndBenefitsAnalysis(location: CanadianLocation, householdSize: number): Promise<any> {
+    this.ensureInitialized();
+    const recommendations = this.generateTaxAndBenefitsRecommendations(householdSize);
+    return {
+      location,
+      householdSize,
+      recommendations,
+      lastUpdated: new Date(),
+      source: "DataServiceOrchestrator"
+    };
+  }
+
+  private generateTaxAndBenefitsRecommendations(householdSize: number): any[] {
+    return [
+      { type: "TAX_CREDIT", description: "Basic personal amount", amount: 15000 },
+      { type: "BENEFIT", description: "Canada Child Benefit", amount: householdSize * 6000 },
+      { type: "TAX_CREDIT", description: "GST/HST credit", amount: 500 }
+    ];
+  }
+
+
 }

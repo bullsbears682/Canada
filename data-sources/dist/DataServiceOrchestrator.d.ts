@@ -11,6 +11,7 @@ export declare class DataServiceOrchestrator {
     private validationService;
     private syncService;
     private monitoringService;
+    private cacheManager;
     private isInitialized;
     constructor();
     /**
@@ -105,6 +106,10 @@ export declare class DataServiceOrchestrator {
      * Calculate salary requirements based on cost of living and lifestyle
      */
     private calculateSalaryRequirements;
+    getComprehensiveUtilityRates(location: CanadianLocation): Promise<any>;
+    getMunicipalData(location: CanadianLocation): Promise<any>;
+    getEmploymentData(location: CanadianLocation): Promise<any>;
+    getTaxAndBenefitsAnalysis(location: CanadianLocation, householdSize: number): Promise<any>;
     private generateTaxAndBenefitsRecommendations;
 }
 //# sourceMappingURL=DataServiceOrchestrator.d.ts.map
