@@ -16,7 +16,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BUILD_DATE = exports.VERSION = exports.getEnvironmentConfig = exports.validateDataSourceConfig = exports.getDataSourcesByFrequency = exports.getHighPriorityDataSources = exports.getAllDataSourceNames = exports.getDataSourceConfig = exports.BankOfCanadaDataSource = exports.CMHCDataSource = exports.StatsCanDataSource = exports.DataMonitoringService = exports.DataSynchronizationService = exports.DataValidationService = exports.DataSourceManager = exports.DataServiceOrchestrator = void 0;
+exports.BUILD_DATE = exports.VERSION = exports.getEnvironmentConfig = exports.validateDataSourceConfig = exports.getDataSourcesByFrequency = exports.getHighPriorityDataSources = exports.getAllDataSourceNames = exports.getDataSourceConfig = exports.ESDCDataSource = exports.CRADatasource = exports.TorontoOpenDataSource = exports.OntarioEnergyBoardDataSource = exports.BankOfCanadaDataSource = exports.CMHCDataSource = exports.StatsCanDataSource = exports.DataMonitoringService = exports.DataSynchronizationService = exports.DataValidationService = exports.DataSourceManager = exports.DataServiceOrchestrator = void 0;
 // Core orchestrator
 const DataServiceOrchestrator_1 = require("./DataServiceOrchestrator");
 Object.defineProperty(exports, "DataServiceOrchestrator", { enumerable: true, get: function () { return DataServiceOrchestrator_1.DataServiceOrchestrator; } });
@@ -37,6 +37,14 @@ var CMHCDataSource_1 = require("./sources/CMHCDataSource");
 Object.defineProperty(exports, "CMHCDataSource", { enumerable: true, get: function () { return CMHCDataSource_1.CMHCDataSource; } });
 var BankOfCanadaDataSource_1 = require("./sources/BankOfCanadaDataSource");
 Object.defineProperty(exports, "BankOfCanadaDataSource", { enumerable: true, get: function () { return BankOfCanadaDataSource_1.BankOfCanadaDataSource; } });
+var OntarioEnergyBoardDataSource_1 = require("./sources/OntarioEnergyBoardDataSource");
+Object.defineProperty(exports, "OntarioEnergyBoardDataSource", { enumerable: true, get: function () { return OntarioEnergyBoardDataSource_1.OntarioEnergyBoardDataSource; } });
+var TorontoOpenDataSource_1 = require("./sources/TorontoOpenDataSource");
+Object.defineProperty(exports, "TorontoOpenDataSource", { enumerable: true, get: function () { return TorontoOpenDataSource_1.TorontoOpenDataSource; } });
+var CRADatasource_1 = require("./sources/CRADatasource");
+Object.defineProperty(exports, "CRADatasource", { enumerable: true, get: function () { return CRADatasource_1.CRADatasource; } });
+var ESDCDataSource_1 = require("./sources/ESDCDataSource");
+Object.defineProperty(exports, "ESDCDataSource", { enumerable: true, get: function () { return ESDCDataSource_1.ESDCDataSource; } });
 // Configuration
 var dataSourceConfig_1 = require("./config/dataSourceConfig");
 Object.defineProperty(exports, "getDataSourceConfig", { enumerable: true, get: function () { return dataSourceConfig_1.getDataSourceConfig; } });

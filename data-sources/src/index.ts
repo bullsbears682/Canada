@@ -17,6 +17,10 @@ export { DataMonitoringService } from './services/DataMonitoringService';
 export { StatsCanDataSource } from './sources/StatsCanDataSource';
 export { CMHCDataSource } from './sources/CMHCDataSource';
 export { BankOfCanadaDataSource } from './sources/BankOfCanadaDataSource';
+export { OntarioEnergyBoardDataSource } from './sources/OntarioEnergyBoardDataSource';
+export { TorontoOpenDataSource } from './sources/TorontoOpenDataSource';
+export { CRADatasource } from './sources/CRADatasource';
+export { ESDCDataSource } from './sources/ESDCDataSource';
 
 // Configuration
 export { 
