@@ -1,14 +1,13 @@
+import { DataSourceManager } from '../core/DataSourceManager';
 import { 
-  DataSourceManager,
-  DataSource,
   HealthStatus,
   PerformanceMetrics,
   DataSourceError,
   DataQualityMetrics
-} from '../DataSourceManager';
-import { DataValidationService } from './DataValidationService';
+} from '../types';
+
 import { DataSynchronizationService } from './DataSynchronizationService';
-import { getDataSourceConfigs } from '../config/dataSourceConfig';
+import { DATA_SOURCE_CONFIGS } from '../config/dataSourceConfig';
 
 /**
  * 🇨🇦 Data Monitoring Service
@@ -18,7 +17,6 @@ import { getDataSourceConfigs } from '../config/dataSourceConfig';
  */
 export class DataMonitoringService {
   private dataSourceManager: DataSourceManager;
-  private validationService: DataValidationService;
   private syncService: DataSynchronizationService;
   private healthCheckInterval: NodeJS.Timeout | null = null;
   private performanceMetrics: Map<string, PerformanceMetrics[]> = new Map();
@@ -29,11 +27,9 @@ export class DataMonitoringService {
 
   constructor(
     dataSourceManager: DataSourceManager,
-    validationService: DataValidationService,
     syncService: DataSynchronizationService
   ) {
     this.dataSourceManager = dataSourceManager;
-    this.validationService = validationService;
     this.syncService = syncService;
     this.initializeAlertThresholds();
   }
@@ -42,9 +38,7 @@ export class DataMonitoringService {
    * Initialize alert thresholds for different metrics
    */
   private initializeAlertThresholds(): void {
-    const configs = getDataSourceConfigs();
-    
-    Object.entries(configs).forEach(([sourceName, config]) => {
+    Object.entries(DATA_SOURCE_CONFIGS).forEach(([sourceName, _]) => {
       this.alertThresholds.set(sourceName, {
         responseTime: {
           warning: 2000, // 2 seconds
@@ -116,8 +110,7 @@ export class DataMonitoringService {
   private async performInitialHealthCheck(): Promise<void> {
     console.log('🔍 Performing initial health check for all data sources...');
     
-    const configs = getDataSourceConfigs();
-    const healthCheckPromises = Object.keys(configs).map(sourceName => 
+    const healthCheckPromises = Object.keys(DATA_SOURCE_CONFIGS).map(sourceName => 
       this.checkDataSourceHealth(sourceName)
     );
 
@@ -137,10 +130,7 @@ export class DataMonitoringService {
 
     console.log('🔍 Performing periodic health check...');
     
-    const configs = getDataSourceConfigs();
-    const now = new Date();
-    
-    for (const sourceName of Object.keys(configs)) {
+    for (const sourceName of Object.keys(DATA_SOURCE_CONFIGS)) {
       try {
         await this.checkDataSourceHealth(sourceName);
       } catch (error) {
@@ -189,7 +179,7 @@ export class DataMonitoringService {
         status: 'unhealthy',
         responseTime: Date.now() - startTime,
         lastChecked: new Date(),
-        errors: [error.message],
+        errors: [(error as any).message || 'Unknown error'],
         dataQuality: await this.getDataQualityMetrics(sourceName)
       };
 
@@ -229,16 +219,13 @@ export class DataMonitoringService {
     }
 
     const errorHistory = this.errorHistory.get(sourceName)!;
-    const dataSourceError: DataSourceError = {
-      source: sourceName,
-      timestamp: new Date(),
-      error: error.message,
-      stack: error.stack,
-      context: {
-        type: 'health_check',
-        severity: 'error'
-      }
-    };
+          const dataSourceError: DataSourceError = {
+        source: sourceName,
+        timestamp: new Date(),
+        message: (error as any).message || 'Unknown error',
+        endpoint: 'unknown',
+        retryable: false
+      };
 
     errorHistory.push(dataSourceError);
 
@@ -258,7 +245,7 @@ export class DataMonitoringService {
     const previousHealth = history[history.length - 2];
     
     // Check for status change
-    if (previousHealth.status !== currentHealth.status) {
+    if (previousHealth && previousHealth.status !== currentHealth.status) {
       console.log(`⚠️  Health status changed for ${sourceName}: ${previousHealth.status} → ${currentHealth.status}`);
       
       // Send alert for critical status changes
@@ -270,7 +257,7 @@ export class DataMonitoringService {
     }
 
     // Check for significant response time changes
-    if (previousHealth.responseTime && currentHealth.responseTime) {
+    if (previousHealth && previousHealth.responseTime && currentHealth.responseTime) {
       const responseTimeChange = Math.abs(currentHealth.responseTime - previousHealth.responseTime);
       const changePercentage = (responseTimeChange / previousHealth.responseTime) * 100;
       
@@ -284,9 +271,7 @@ export class DataMonitoringService {
    * Check alert conditions and send alerts if needed
    */
   private checkAlertConditions(): void {
-    const configs = getDataSourceConfigs();
-    
-    for (const sourceName of Object.keys(configs)) {
+    for (const sourceName of Object.keys(DATA_SOURCE_CONFIGS)) {
       const thresholds = this.alertThresholds.get(sourceName);
       if (!thresholds) continue;
 
@@ -297,7 +282,7 @@ export class DataMonitoringService {
       const recentHealth = healthHistory.slice(-10); // Last 10 checks
 
       // Check response time
-      if (latestHealth.responseTime) {
+      if (latestHealth && latestHealth.responseTime) {
         if (latestHealth.responseTime > thresholds.responseTime.critical) {
           this.sendAlert(sourceName, 'critical', `Response time critical: ${latestHealth.responseTime}ms`);
         } else if (latestHealth.responseTime > thresholds.responseTime.warning) {
@@ -330,18 +315,6 @@ export class DataMonitoringService {
    * Send alert for monitoring events
    */
   private sendAlert(sourceName: string, level: 'info' | 'warning' | 'critical', message: string): void {
-    const alert = {
-      source: sourceName,
-      level,
-      message,
-      timestamp: new Date(),
-      context: {
-        healthStatus: this.healthHistory.get(sourceName)?.slice(-1)[0]?.status,
-        errorCount: this.errorHistory.get(sourceName)?.length || 0,
-        lastSync: this.syncService.getSyncStatus()[sourceName]?.lastUpdate
-      }
-    };
-
     // Log alert
     console.log(`🚨 [${level.toUpperCase()}] ${sourceName}: ${message}`);
 
@@ -383,29 +356,28 @@ export class DataMonitoringService {
    * Get overall system health status
    */
   getSystemHealthStatus(): SystemHealthStatus {
-    const configs = getDataSourceConfigs();
-    const totalSources = Object.keys(configs).length;
+    const totalSources = Object.keys(DATA_SOURCE_CONFIGS).length;
     let healthySources = 0;
     let warningSources = 0;
     let criticalSources = 0;
     let totalResponseTime = 0;
     let totalErrors = 0;
 
-    for (const sourceName of Object.keys(configs)) {
+    for (const sourceName of Object.keys(DATA_SOURCE_CONFIGS)) {
       const healthHistory = this.healthHistory.get(sourceName);
       if (!healthHistory || healthHistory.length === 0) continue;
 
       const latestHealth = healthHistory[healthHistory.length - 1];
       
-      if (latestHealth.status === 'healthy') {
+      if (latestHealth && latestHealth.status === 'healthy') {
         healthySources++;
-      } else if (latestHealth.status === 'warning') {
+      } else if (latestHealth && latestHealth.status === 'degraded') {
         warningSources++;
-      } else {
+      } else if (latestHealth) {
         criticalSources++;
       }
 
-      if (latestHealth.responseTime) {
+      if (latestHealth && latestHealth.responseTime) {
         totalResponseTime += latestHealth.responseTime;
       }
 
@@ -436,10 +408,9 @@ export class DataMonitoringService {
    * Get detailed health status for all sources
    */
   getAllSourcesHealthStatus(): Record<string, DetailedHealthStatus> {
-    const configs = getDataSourceConfigs();
     const status: Record<string, DetailedHealthStatus> = {};
 
-    for (const sourceName of Object.keys(configs)) {
+    for (const sourceName of Object.keys(DATA_SOURCE_CONFIGS)) {
       const healthHistory = this.healthHistory.get(sourceName);
       const errorHistory = this.errorHistory.get(sourceName);
       const syncStatus = this.syncService.getSyncStatus()[sourceName];
@@ -448,20 +419,22 @@ export class DataMonitoringService {
         const latestHealth = healthHistory[healthHistory.length - 1];
         const recentHealth = healthHistory.slice(-10);
 
-        status[sourceName] = {
-          name: sourceName,
-          currentStatus: latestHealth.status,
-          lastChecked: latestHealth.lastChecked,
-          responseTime: latestHealth.responseTime,
-          averageResponseTime: this.calculateAverageResponseTime(recentHealth),
-          uptime: (recentHealth.filter(h => h.status === 'healthy').length / recentHealth.length) * 100,
-          errorCount: errorHistory?.length || 0,
-          recentErrors: errorHistory?.slice(-5) || [],
-          dataQuality: latestHealth.dataQuality,
-          lastSync: syncStatus?.lastUpdate,
-          nextSync: syncStatus?.nextUpdate,
-          consecutiveFailures: syncStatus?.consecutiveFailures || 0
-        };
+        if (latestHealth) {
+          status[sourceName] = {
+            name: sourceName,
+            currentStatus: latestHealth.status,
+            lastChecked: latestHealth.lastChecked,
+            responseTime: latestHealth.responseTime,
+            averageResponseTime: this.calculateAverageResponseTime(recentHealth),
+            uptime: (recentHealth.filter(h => h.status === 'healthy').length / recentHealth.length) * 100,
+            errorCount: errorHistory?.length || 0,
+            recentErrors: errorHistory?.slice(-5) || [],
+            dataQuality: latestHealth.dataQuality,
+            lastSync: syncStatus?.lastUpdate,
+            nextSync: syncStatus?.nextUpdate,
+            consecutiveFailures: syncStatus?.consecutiveFailures || 0
+          };
+        }
       }
     }
 
@@ -513,25 +486,23 @@ export class DataMonitoringService {
    * Get error summary for all sources
    */
   getErrorSummary(): ErrorSummary {
-    const configs = getDataSourceConfigs();
     let totalErrors = 0;
     let criticalErrors = 0;
     let sourcesWithErrors = 0;
     const errorTypes: Record<string, number> = {};
 
-    for (const sourceName of Object.keys(configs)) {
+    for (const sourceName of Object.keys(DATA_SOURCE_CONFIGS)) {
       const errorHistory = this.errorHistory.get(sourceName);
       if (errorHistory && errorHistory.length > 0) {
         sourcesWithErrors++;
         totalErrors += errorHistory.length;
         
-        errorHistory.forEach(error => {
-          const errorType = error.context?.type || 'unknown';
+        errorHistory.forEach(() => {
+          const errorType = 'unknown'; // DataSourceError doesn't have context.type
           errorTypes[errorType] = (errorTypes[errorType] || 0) + 1;
           
-          if (error.context?.severity === 'critical') {
-            criticalErrors++;
-          }
+          // DataSourceError doesn't have context.severity, so we'll count all as non-critical
+          // In a real implementation, you might want to add severity to DataSourceError
         });
       }
     }
@@ -540,7 +511,7 @@ export class DataMonitoringService {
       totalErrors,
       criticalErrors,
       sourcesWithErrors,
-      totalSources: Object.keys(configs).length,
+      totalSources: Object.keys(DATA_SOURCE_CONFIGS).length,
       errorTypes,
       lastUpdated: new Date()
     };

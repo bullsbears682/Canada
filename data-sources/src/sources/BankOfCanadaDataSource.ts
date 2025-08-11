@@ -1,10 +1,8 @@
-import { 
-  DataSource, 
-  HealthStatus, 
+import {
+  DataSource,
+  HealthStatus,
   DataQualityMetrics,
-  EconomicIndicators,
-  CanadianLocation,
-  Province
+  EconomicIndicators
 } from '../types';
 
 /**
@@ -43,7 +41,7 @@ export class BankOfCanadaDataSource implements DataSource {
     
     try {
       // Test with a simple endpoint
-      const response = await this.makeRequest('/observations/FXUSDCAD', {});
+      await this.makeRequest('/observations/FXUSDCAD', {});
       const responseTime = Date.now() - startTime;
       
       return {
@@ -58,7 +56,7 @@ export class BankOfCanadaDataSource implements DataSource {
         status: 'unhealthy',
         responseTime: null,
         lastChecked: new Date(),
-        errors: [error.message],
+        errors: [(error as any).message || 'Unknown error'],
         dataQuality: await this.calculateDataQuality()
       };
     }
@@ -87,8 +85,8 @@ export class BankOfCanadaDataSource implements DataSource {
       format: 'json'
     };
     
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
+    if (startDate) params['start_date'] = startDate;
+    if (endDate) params['end_date'] = endDate;
     
     const response = await this.makeRequest(endpoint, params);
     return this.transformPolicyRateHistory(response);
@@ -106,7 +104,7 @@ export class BankOfCanadaDataSource implements DataSource {
         const rate = await this.getExchangeRate(currency);
         rates[currency] = rate;
       } catch (error) {
-        console.warn(`Failed to fetch ${currency} rate:`, error.message);
+        console.warn(`Failed to fetch ${currency} rate:`, (error as any).message || 'Unknown error');
         rates[currency] = 0;
       }
     }
@@ -145,11 +143,11 @@ export class BankOfCanadaDataSource implements DataSource {
       format: 'json'
     };
     
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
+    if (startDate) params['start_date'] = startDate;
+    if (endDate) params['end_date'] = endDate;
     
     const response = await this.makeRequest(endpoint, params);
-    return this.transformExchangeRateHistory(response, currency);
+    return this.transformExchangeRateHistory(response);
   }
 
   /**
@@ -241,7 +239,7 @@ export class BankOfCanadaDataSource implements DataSource {
       const response = await this.makeRequest(endpoint, params);
       return response.series || [];
     } catch (error) {
-      console.warn('Could not fetch available series:', error.message);
+              console.warn('Could not fetch available series:', (error as any).message || 'Unknown error');
       return [];
     }
   }
@@ -283,8 +281,8 @@ export class BankOfCanadaDataSource implements DataSource {
     const data = await response.json();
     
     // Check for API errors in response
-    if (data.error) {
-      throw new Error(`Bank of Canada API error: ${data.error.message || data.error}`);
+    if ((data as any).error) {
+      throw new Error(`Bank of Canada API error: ${(data as any).error.message || (data as any).error}`);
     }
     
     return data;
@@ -344,7 +342,7 @@ export class BankOfCanadaDataSource implements DataSource {
   /**
    * Transform exchange rate history response
    */
-  private transformExchangeRateHistory(response: any, currency: string): any[] {
+  private transformExchangeRateHistory(response: any): any[] {
     const observations = response.observations || [];
     
     return observations.map((obs: any) => ({
@@ -395,7 +393,7 @@ export class BankOfCanadaDataSource implements DataSource {
       const response = await this.makeRequest(endpoint, params);
       return this.transformForecastResponse(response);
     } catch (error) {
-      console.warn('Interest rate forecasts not available:', error.message);
+      console.warn('Interest rate forecasts not available:', (error as any).message || 'Unknown error');
       return null;
     }
   }
@@ -427,7 +425,7 @@ export class BankOfCanadaDataSource implements DataSource {
       const response = await this.makeRequest(endpoint, params);
       return response.reports || [];
     } catch (error) {
-      console.warn('Economic outlook reports not available:', error.message);
+      console.warn('Economic outlook reports not available:', (error as any).message || 'Unknown error');
       return [];
     }
   }
@@ -443,7 +441,7 @@ export class BankOfCanadaDataSource implements DataSource {
       const response = await this.makeRequest(endpoint, params);
       return this.transformFinancialSystemReview(response);
     } catch (error) {
-      console.warn('Financial system review not available:', error.message);
+      console.warn('Financial system review not available:', (error as any).message || 'Unknown error');
       return null;
     }
   }

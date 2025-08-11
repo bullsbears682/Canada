@@ -2,9 +2,6 @@ import {
   DataSource, 
   HealthStatus, 
   DataQualityMetrics,
-  HousingData,
-  EconomicIndicators,
-  CanadianLocation,
   Province,
   MortgageRates,
   RentalMarketData
@@ -46,7 +43,7 @@ export class CMHCDataSource implements DataSource {
     
     try {
       // Test with a simple endpoint
-      const response = await this.makeRequest('/v1/health', {});
+      await this.makeRequest('/v1/health', {});
       const responseTime = Date.now() - startTime;
       
       return {
@@ -61,7 +58,7 @@ export class CMHCDataSource implements DataSource {
         status: 'unhealthy',
         responseTime: null,
         lastChecked: new Date(),
-        errors: [error.message],
+        errors: [(error as any).message || 'Unknown error'],
         dataQuality: await this.calculateDataQuality()
       };
     }
@@ -215,8 +212,8 @@ export class CMHCDataSource implements DataSource {
     const data = await response.json();
     
     // Check for API errors in response
-    if (data.error) {
-      throw new Error(`CMHC API error: ${data.error.message || data.error}`);
+    if ((data as any).error) {
+      throw new Error(`CMHC API error: ${(data as any).error.message || (data as any).error}`);
     }
     
     return data;
@@ -240,16 +237,12 @@ export class CMHCDataSource implements DataSource {
         '10Year': data.fixedRates?.['10Year'] || 0
       },
       variableRates: {
-        '3Year': data.variableRates?.['3Year'] || 0,
-        '5Year': data.variableRates?.['5Year'] || 0
+        primeMinus: data.variableRates?.primeMinus || 0,
+        primePlus: data.variableRates?.primePlus || 0
       },
-      primeRate: data.primeRate || 0,
+
       lastUpdated: new Date(data.lastUpdated || Date.now()),
-      source: {
-        name: this.name,
-        reliability: 0.98, // CMHC is the official source
-        lastVerified: new Date()
-      }
+      source: this.name
     };
   }
 
@@ -274,18 +267,18 @@ export class CMHCDataSource implements DataSource {
     
     return {
       region: data.region,
-      averageRent: data.averageRent || 0,
-      medianRent: data.medianRent || 0,
+      period: data.period || 'current',
+      averageRent: {
+        studio: data.averageRent?.studio || 0,
+        oneBedroom: data.averageRent?.oneBedroom || 0,
+        twoBedroom: data.averageRent?.twoBedroom || 0,
+        threeBedroom: data.averageRent?.threeBedroom || 0
+      },
       vacancyRate: data.vacancyRate || 0,
-      rentChange1Year: data.rentChange1Year || 0,
-      rentChange5Year: data.rentChange5Year || 0,
+      rentChange: data.rentChange || 0,
       lastUpdated: new Date(data.lastUpdated || Date.now()),
-      propertyTypes: data.propertyTypes || {},
-      source: {
-        name: this.name,
-        reliability: 0.95,
-        lastVerified: new Date()
-      }
+
+
     };
   }
 
@@ -394,7 +387,7 @@ export class CMHCDataSource implements DataSource {
       const datasets = response.datasets || [];
       return datasets.map((dataset: any) => dataset.name);
     } catch (error) {
-      console.warn('Could not fetch available CMHC datasets:', error.message);
+      console.warn('Could not fetch available CMHC datasets:', (error as any).message || 'Unknown error');
       return [];
     }
   }
@@ -429,13 +422,13 @@ export class CMHCDataSource implements DataSource {
    */
   async getRegionalReports(province?: Province): Promise<any[]> {
     const endpoint = '/v1/reports/regional';
-    const params = { 
+    const params: Record<string, any> = { 
       format: 'json',
       period: 'latest'
     };
     
     if (province) {
-      params.province = province;
+      params['province'] = province;
     }
     
     const response = await this.makeRequest(endpoint, params);

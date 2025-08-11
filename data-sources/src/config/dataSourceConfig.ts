@@ -52,7 +52,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'cmhc': {
     name: 'CMHC',
     baseUrl: 'https://api.cmhc-schl.gc.ca',
-    apiKey: process.env.CMHC_API_KEY || '',
+    apiKey: process.env['CMHC_API_KEY'] || '',
     rateLimit: {
       requests: 500,
       window: 3600 // 500 requests per hour
@@ -92,7 +92,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'bank-of-canada': {
     name: 'Bank of Canada',
     baseUrl: 'https://www.bankofcanada.ca/valet',
-    apiKey: process.env.BANK_OF_CANADA_API_KEY || '',
+    apiKey: process.env['BANK_OF_CANADA_API_KEY'] || '',
     rateLimit: {
       requests: 2000,
       window: 3600 // 2000 requests per hour
@@ -126,7 +126,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'ontario-energy-board': {
     name: 'Ontario Energy Board',
     baseUrl: 'https://api.oeb.ca',
-    apiKey: process.env.OEB_API_KEY || '',
+    apiKey: process.env['OEB_API_KEY'] || '',
     rateLimit: {
       requests: 200,
       window: 3600 // 200 requests per hour
@@ -160,7 +160,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'toronto-open-data': {
     name: 'Toronto Open Data',
     baseUrl: 'https://ckan0.cf.opendata.inter.prod-toronto.ca',
-    apiKey: process.env.TORONTO_OPEN_DATA_API_KEY || '',
+    apiKey: process.env['TORONTO_OPEN_DATA_API_KEY'] || '',
     rateLimit: {
       requests: 1000,
       window: 3600 // 1000 requests per hour
@@ -194,7 +194,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'cra': {
     name: 'Canada Revenue Agency',
     baseUrl: 'https://api.cra-arc.gc.ca',
-    apiKey: process.env.CRA_API_KEY || '',
+    apiKey: process.env['CRA_API_KEY'] || '',
     rateLimit: {
       requests: 100,
       window: 3600 // 100 requests per hour
@@ -228,7 +228,7 @@ export const DATA_SOURCE_CONFIGS: Record<string, DataSourceConfig> = {
   'esdc': {
     name: 'ESDC',
     baseUrl: 'https://api.esdc.gc.ca',
-    apiKey: process.env.ESDC_API_KEY || '',
+    apiKey: process.env['ESDC_API_KEY'] || '',
     rateLimit: {
       requests: 300,
       window: 3600 // 300 requests per hour
@@ -328,7 +328,7 @@ export function validateDataSourceConfig(config: DataSourceConfig): string[] {
  * Get environment-specific configuration
  */
 export function getEnvironmentConfig(): Record<string, any> {
-  const env = process.env.NODE_ENV || 'development';
+  const env = process.env['NODE_ENV'] || 'development';
   
   const baseConfig = {
     cacheTTL: {

@@ -6,8 +6,7 @@ import {
   EconomicIndicators,
   PostalCodeData,
   CanadianLocation,
-  Province,
-  APIResponse
+  Province
 } from '../types';
 
 /**
@@ -46,7 +45,7 @@ export class StatsCanDataSource implements DataSource {
     
     try {
       // Test with a simple endpoint
-      const response = await this.makeRequest('/v1/health', {});
+      await this.makeRequest('/v1/health', {});
       const responseTime = Date.now() - startTime;
       
       return {
@@ -61,7 +60,7 @@ export class StatsCanDataSource implements DataSource {
         status: 'unhealthy',
         responseTime: null,
         lastChecked: new Date(),
-        errors: [error.message],
+        errors: [(error as any).message || 'Unknown error'],
         dataQuality: await this.calculateDataQuality()
       };
     }
@@ -200,8 +199,8 @@ export class StatsCanDataSource implements DataSource {
     const data = await response.json();
     
     // Check for API errors in response
-    if (data.error) {
-      throw new Error(`StatsCan API error: ${data.error.message || data.error}`);
+    if ((data as any).error) {
+      throw new Error(`StatsCan API error: ${(data as any).error.message || (data as any).error}`);
     }
     
     return data;
@@ -446,7 +445,7 @@ export class StatsCanDataSource implements DataSource {
       const datasets = response.datasets || [];
       return datasets.map((dataset: any) => dataset.name);
     } catch (error) {
-      console.warn('Could not fetch available datasets:', error.message);
+      console.warn('Could not fetch available datasets:', (error as any).message || 'Unknown error');
       return [];
     }
   }

@@ -38,7 +38,6 @@ export class DataServiceOrchestrator {
     this.syncService = new DataSynchronizationService(this.dataSourceManager);
     this.monitoringService = new DataMonitoringService(
       this.dataSourceManager,
-      this.validationService,
       this.syncService
     );
   }

@@ -1,39 +1,15 @@
-// Main entry point for Canadian Data Sources System
-// Export all public interfaces and classes
-
-// Core orchestrator
 import { DataServiceOrchestrator } from './DataServiceOrchestrator';
 export { DataServiceOrchestrator };
-
-// Data source manager
 export { DataSourceManager } from './core/DataSourceManager';
-
-// Services
 export { DataValidationService } from './services/DataValidationService';
 export { DataSynchronizationService } from './services/DataSynchronizationService';
 export { DataMonitoringService } from './services/DataMonitoringService';
-
-// Data sources
 export { StatsCanDataSource } from './sources/StatsCanDataSource';
 export { CMHCDataSource } from './sources/CMHCDataSource';
 export { BankOfCanadaDataSource } from './sources/BankOfCanadaDataSource';
-
-// Configuration
-export { 
-  getDataSourceConfig, 
-  getAllDataSourceNames, 
-  getHighPriorityDataSources,
-  getDataSourcesByFrequency,
-  validateDataSourceConfig,
-  getEnvironmentConfig
-} from './config/dataSourceConfig';
-
-// Types and interfaces
+export { getDataSourceConfig, getAllDataSourceNames, getHighPriorityDataSources, getDataSourcesByFrequency, validateDataSourceConfig, getEnvironmentConfig } from './config/dataSourceConfig';
 export * from './types';
-
-// Version information
-export const VERSION = '1.0.0';
-export const BUILD_DATE = new Date().toISOString();
-
-// Default export for convenience
+export declare const VERSION = "1.0.0";
+export declare const BUILD_DATE: string;
 export default DataServiceOrchestrator;
+//# sourceMappingURL=index.d.ts.map
